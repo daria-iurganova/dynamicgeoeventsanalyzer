@@ -1,4 +1,4 @@
-package com.itmo.dynamicgeoeventsanalyzer.eventslistener;
+package com.itmo.dynamicgeoeventsanalyzer.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

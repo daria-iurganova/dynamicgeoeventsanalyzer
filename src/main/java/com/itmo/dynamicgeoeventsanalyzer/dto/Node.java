@@ -1,12 +1,12 @@
-package com.itmo.dynamicgeoeventsanalyzer.quadtree;
+package com.itmo.dynamicgeoeventsanalyzer.dto;
 
-import com.itmo.dynamicgeoeventsanalyzer.dto.LatLong;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
@@ -19,9 +19,11 @@ public class Node<T> {
     private Node<T> maxmax;
     private Node<T> minmax;
     private Node<T> maxmin;
-    private Collection<DataAtPoint<T>> data = new ArrayList<>();
+    //TODO: ArrayList -> sync collection
+    private Collection<DataAtPoint<T>> data = new CopyOnWriteArrayList<>();
 
     @Data
+    @AllArgsConstructor
     public static class DataAtPoint<V> {
         private V data;
         private LatLong point;
@@ -40,27 +42,31 @@ public class Node<T> {
     public static class Square {
         private Double minLat;
         private Double maxLat;
-        private Double minLong;
-        private Double maxLong;
+        private Double minLon;
+        private Double maxLon;
 
         public Double getLength() {
             return abs(maxLat - minLat);
         }
 
         public Double getWidth() {
-            return abs(maxLong - minLong);
+            return abs(maxLon - minLon);
         }
 
         public boolean contains(final Square square) {
             return square.minLat >= this.minLat &&
                     square.maxLat <= this.maxLat &&
-                    square.minLong >= this.minLong &&
-                    square.maxLong <= this.maxLong;
+                    square.minLon >= this.minLon &&
+                    square.maxLon <= this.maxLon;
         }
 
         public boolean contains(final LatLong point) {
             return point.getLatitude() < getMaxLat() && point.getLatitude() > getMinLat() &&
-                    point.getLongitude() < getMaxLong() && point.getLongitude() > getMinLong();
+                    point.getLongitude() < getMaxLon() && point.getLongitude() > getMinLon();
+        }
+
+        public LatLong getCenter() {
+            return new LatLong(maxLat - (maxLat - minLat)/2, maxLon - (maxLon - minLon)/2);
         }
     }
 
@@ -80,18 +86,18 @@ public class Node<T> {
     }
 
     private Square buildMinMinSquare() {
-        return new Square(this.square.minLat, this.square.maxLat - this.square.getLength() / 2, this.square.minLong, this.square.maxLong - this.square.getWidth() / 2);
+        return new Square(this.square.minLat, this.square.maxLat - this.square.getLength() / 2, this.square.minLon, this.square.maxLon - this.square.getWidth() / 2);
     }
 
     private Square buildMinMaxSquare() {
-        return new Square(this.square.minLat, this.square.maxLat - this.square.getLength() / 2, this.square.maxLong - this.square.getWidth() / 2, this.square.maxLong);
+        return new Square(this.square.minLat, this.square.maxLat - this.square.getLength() / 2, this.square.maxLon - this.square.getWidth() / 2, this.square.maxLon);
     }
 
     private Square buildMaxMaxSquare() {
-        return new Square(this.square.maxLat - this.square.getLength() / 2, this.square.maxLat, this.square.maxLong - this.square.getWidth() / 2, this.square.maxLong);
+        return new Square(this.square.maxLat - this.square.getLength() / 2, this.square.maxLat, this.square.maxLon - this.square.getWidth() / 2, this.square.maxLon);
     }
 
     private Square buildMaxMinSquare() {
-        return new Square(this.square.maxLat - this.square.getLength() / 2, this.square.maxLat, this.square.minLong, this.square.maxLong - this.square.getWidth() / 2);
+        return new Square(this.square.maxLat - this.square.getLength() / 2, this.square.maxLat, this.square.minLon, this.square.maxLon - this.square.getWidth() / 2);
     }
 }

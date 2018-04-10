@@ -1,6 +1,10 @@
-package com.itmo.dynamicgeoeventsanalyzer.initializer;
+package com.itmo.dynamicgeoeventsanalyzer;
 
-import com.itmo.dynamicgeoeventsanalyzer.quadtree.Node;
+import com.itmo.dynamicgeoeventsanalyzer.accumulator.Accumulator;
+import com.itmo.dynamicgeoeventsanalyzer.analyzer.HourSwitchTrigger;
+import com.itmo.dynamicgeoeventsanalyzer.dto.Event;
+import com.itmo.dynamicgeoeventsanalyzer.dto.LatLong;
+import com.itmo.dynamicgeoeventsanalyzer.dto.Node;
 import com.itmo.dynamicgeoeventsanalyzer.reader.GeojsonToNodeMapper;
 import com.itmo.dynamicgeoeventsanalyzer.reader.InputSourcePathChooser;
 import com.itmo.dynamicgeoeventsanalyzer.reader.LatestMatchingPathFinder;
@@ -20,21 +24,30 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Component
 public class Initializer {
     private final IntegrationFlowContext flowContext;
+    private final Accumulator accumulator;
+    private final HourSwitchTrigger hourSwitchTrigger;
+    private final Executor hourSwitchExecutor;
 
     @EventListener(ContextRefreshedEvent.class)
     private void init() throws IOException {
-        getNodes(new Date()).stream()
+        final Collection<Node<Event>> nodes = getNodes(new Date());
+        accumulator.initNodes(nodes);
+        nodes.stream()
                 .map(Node::getSquare)
-                .map(s -> getMessageProducer(s.getMinLat(), s.getMinLong()))
+                .map(s -> getMessageProducer(s.getCenter()))
+                .collect(Collectors.toSet())
                 .forEach(this::registerFlow);
+        hourSwitchExecutor.execute(hourSwitchTrigger::watchTime);
     }
 
-    private Collection<Node> getNodes(Date date) throws IOException {
+    private Collection<Node<Event>> getNodes(Date date) throws IOException {
         return GeojsonToNodeMapper.map(StringToGeojsonMapper.map(LatestMatchingPathFinder.getFileContent(InputSourcePathChooser.getPathPostfix(date), date)));
     }
 
@@ -43,8 +56,8 @@ public class Initializer {
                 .get()).register();
     }
 
-    private MessageProducerSupport getMessageProducer(double lat, double lon) {
-        return webSocketInboundChannelAdapter("ws://localhost:4567/feed?lat=" + lon + "&lon=" + lat);
+    private MessageProducerSupport getMessageProducer(LatLong point) {
+        return webSocketInboundChannelAdapter("ws://localhost:4567/feed?lat=" + point.getLatitude() + "&lon=" + point.getLongitude());
     }
 
     private MessageProducerSupport webSocketInboundChannelAdapter(final String uri) {
