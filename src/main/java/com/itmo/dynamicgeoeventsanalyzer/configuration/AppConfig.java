@@ -20,6 +20,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.channel.MessageChannels;
 import org.springframework.integration.json.JsonToObjectTransformer;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -68,15 +69,20 @@ public class AppConfig {
     @Bean
     public IntegrationFlow hourSwitch() {
         return IntegrationFlows.from("hourSwitchInput")
-                .handle(c -> {
-                    analyzer.setNodes(accumulator.getNodes());
-                    try {
-                        accumulator.initNodes(GeojsonToNodeMapper.map(StringToGeojsonMapper.map(LatestMatchingPathFinder.getFileContent(InputSourcePathChooser.getPathPostfix(new Date()), new Date()))));
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to reinit");
-                    }
-                })
+                .handle(getDumpMessageHandler())
                 .get();
+    }
+
+    @Bean
+    public MessageHandler getDumpMessageHandler() {
+        return c -> {
+            try {
+                analyzer.updateNodes(accumulator.getNodes());
+                accumulator.initNodes(GeojsonToNodeMapper.map(StringToGeojsonMapper.map(LatestMatchingPathFinder.getFileContent(InputSourcePathChooser.getPathPostfix(new Date()), new Date()))));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to reinit");
+            }
+        };
     }
 
     @Bean
