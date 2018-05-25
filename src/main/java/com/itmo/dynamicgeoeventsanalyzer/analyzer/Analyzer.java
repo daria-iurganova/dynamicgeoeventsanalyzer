@@ -2,7 +2,6 @@ package com.itmo.dynamicgeoeventsanalyzer.analyzer;
 
 import com.itmo.dynamicgeoeventsanalyzer.dto.Event;
 import com.itmo.dynamicgeoeventsanalyzer.dto.Node;
-import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -11,6 +10,7 @@ import java.util.Collection;
 public class Analyzer {
     private Collection<Node<Event>> nodes;
 
+    //TODO: add processing
     public void updateNodes(final Collection<Node<Event>> newNodes) {
 
     }

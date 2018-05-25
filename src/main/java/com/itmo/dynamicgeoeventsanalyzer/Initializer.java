@@ -11,6 +11,7 @@ import com.itmo.dynamicgeoeventsanalyzer.reader.LatestMatchingPathFinder;
 import com.itmo.dynamicgeoeventsanalyzer.reader.StringToGeojsonMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -30,6 +31,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Component
 public class Initializer {
+    private static final String EVENTS_CHANNEL = "eventsChannel";
+
+    @Value("${events.provider.host}")
+    private String eventsProviderHost;
+
     private final IntegrationFlowContext flowContext;
     private final Accumulator accumulator;
     private final HourSwitchTrigger hourSwitchTrigger;
@@ -52,12 +58,13 @@ public class Initializer {
     }
 
     private void registerFlow(final MessageProducerSupport messageProducer) {
-        flowContext.registration(IntegrationFlows.from(messageProducer).channel("eventsChannel")
+        flowContext.registration(IntegrationFlows.from(messageProducer).channel(EVENTS_CHANNEL)
                 .get()).register();
     }
 
     private MessageProducerSupport getMessageProducer(LatLong point) {
-        return webSocketInboundChannelAdapter("ws://localhost:4567/feed?lat=" + point.getLatitude() + "&lon=" + point.getLongitude());
+        eventsProviderHost = "localhost:4567";
+        return webSocketInboundChannelAdapter("ws://" + eventsProviderHost + "/feed?lat=" + point.getLatitude() + "&lon=" + point.getLongitude());
     }
 
     private MessageProducerSupport webSocketInboundChannelAdapter(final String uri) {

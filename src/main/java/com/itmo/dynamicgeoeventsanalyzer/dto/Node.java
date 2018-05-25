@@ -19,7 +19,6 @@ public class Node<T> {
     private Node<T> maxmax;
     private Node<T> minmax;
     private Node<T> maxmin;
-    //TODO: ArrayList -> sync collection
     private Collection<DataAtPoint<T>> data = new CopyOnWriteArrayList<>();
 
     @Data
@@ -72,13 +71,13 @@ public class Node<T> {
 
     public void divide() {
         final Square minMinSquare = buildMinMinSquare();
-        minmin = new Node<T>(minMinSquare, getDataForSquare(minMinSquare));
+        minmin = new Node<>(minMinSquare, getDataForSquare(minMinSquare));
         final Square minMaxSquare = buildMinMaxSquare();
-        minmax = new Node<T>(minMaxSquare, getDataForSquare(minMinSquare));
+        minmax = new Node<>(minMaxSquare, getDataForSquare(minMinSquare));
         final Square maxMaxSquare = buildMaxMaxSquare();
-        maxmax = new Node<T>(maxMaxSquare, getDataForSquare(minMinSquare));
+        maxmax = new Node<>(maxMaxSquare, getDataForSquare(minMinSquare));
         final Square maxMinSquare = buildMaxMinSquare();
-        maxmin = new Node<T>(maxMinSquare, getDataForSquare(minMinSquare));
+        maxmin = new Node<>(maxMinSquare, getDataForSquare(minMinSquare));
     }
 
     private Collection<DataAtPoint<T>> getDataForSquare(Square square) {

@@ -1,6 +1,5 @@
 package com.itmo.dynamicgeoeventsanalyzer.dto;
 
-import lombok.Data;
 import lombok.Value;
 
 @Value
